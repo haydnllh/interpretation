@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: interpretation
+Version: 0.1.0
+Summary: Machine learning interpretability library
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# This is a library for interpreting black box models
