@@ -9,6 +9,7 @@ venv.bak/
 
 # shap/shap
 __pycache__
+*.egg-info
 .DS_Store
 .eggs
 .idea
