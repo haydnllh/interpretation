@@ -7,7 +7,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# shap/shap
 __pycache__
 *.egg-info
 .DS_Store
@@ -18,27 +17,5 @@ __pycache__
 .vscode
 .python-version
 *.pyc
-*.so
-**/.coverage*
 /build
-/data/*
 /dist
-/docs/_build
-/docs/artwork/local
-/docs/generated/
-/docs/local
-/javascript/build/*
-/notebooks/deep_explainer/mnist_data
-/notebooks/local_scratch
-/shap.egg-info
-/shap/_cext*
-shap/explainers/_kernel_lib.c
-/shap/_version.py
-/shap/cached_data
-/tests/local_scratch.py
-/tests/mnist_data
-catboost_info
-node_modules
-mpl-results
-# intermediate AI skill files
-.claude/disclosures/
