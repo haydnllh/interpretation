@@ -20,7 +20,7 @@ Install requirements.txt
 pip install -r requirements.txt
 ```
 
-Install torch depending on your device
+Install torch depending on your device \
 For CPUs:
 ```
 pip install torch

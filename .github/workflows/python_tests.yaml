@@ -33,9 +33,9 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Install test dependencies
+    - name: Install torch
       run: |
-        pip install pytest
+        pip install torch --index-url https://download.pytorch.org/whl/cu130
 
     - name: Run tests
       run: |
