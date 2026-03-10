@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator
 import numpy as np
 import numpy.typing as npt 
 from typing import Any
-from wrapper.model import Model
+from .model import Model
 
 class SklearnModel(Model):
     """This is a wrapper for Sklearn models"""

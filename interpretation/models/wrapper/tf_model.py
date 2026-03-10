@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy.typing as npt
 from typing import Any
-from wrapper.model import Model
+from .model import Model
 
 class TfModel(Model):
     """This is a wrapper for TensorFlow / Keras models"""

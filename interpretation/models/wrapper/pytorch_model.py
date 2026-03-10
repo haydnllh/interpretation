@@ -1,7 +1,7 @@
 import torch
 import numpy.typing as npt
 from typing import Any
-from wrapper.model import Model
+from .model import Model
 
 class PyTorchModel(Model):
     """This is a wrapper for PyTorch models"""
@@ -24,7 +24,11 @@ class PyTorchModel(Model):
         "Model inference"
         
         with torch.no_grad():
-            X = torch.tensor(X, device=self.device)
+            if isinstance(X, torch.Tensor):
+                X = X.to(self.device)
+            else:
+                X = torch.tensor(X, device=self.device)
+            
             output = self.model(X)
             
         return output.detach().cpu().numpy()

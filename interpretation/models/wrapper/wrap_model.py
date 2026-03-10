@@ -1,6 +1,6 @@
-from pytorch_model import PyTorchModel
-from sklearn_model import SklearnModel
-from tf_model import TfModel
+from .pytorch_model import PyTorchModel
+from .sklearn_model import SklearnModel
+from .tf_model import TfModel
 
 def wrap_model(input_model):
     "This function wraps models automatically to the Model class"
