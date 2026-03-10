@@ -1,7 +1,8 @@
 from typing import Any
 import numpy.typing as npt
+from abc import ABC, abstractmethod
 
-class Model:
+class Model(ABC):
     """This is a superclass for all models"""
     
     def __init__(self, input_model: Any) -> None:
@@ -11,10 +12,11 @@ class Model:
         else:
             self.model = input_model
             
+    @abstractmethod
     def __call__(self, X:npt.ArrayLike) -> npt.NDArray[Any]:
         """
-        This is meant to be overridden by subclasses
+        Must be implemented by subclasses.
         
         Returns the model's prediction. Similar to .predict from Scikit-Learn or __call__ from PyTorch
         """
-        raise NotImplementedError()
+        pass

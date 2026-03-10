@@ -4,7 +4,7 @@ import sklearn
 import numpy as np
 import numpy.typing as npt
 import pytest
-from interpretation.models.wrapper.wrap_model import wrap_model
+from interpretation.models.wrapper import wrap_model
 
 def test_pytorch_wrapper():
     pytorch_model = torch.nn.Linear(1, 1)
