@@ -2,7 +2,6 @@ import torch
 import tensorflow as tf
 import sklearn
 import numpy as np
-import numpy.typing as npt
 import pytest
 from interpretation.models.wrapper import wrap_model
 
