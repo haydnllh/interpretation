@@ -13,7 +13,9 @@ class LinearModel(Model):
     """
     
     def __init__(self, input_model:torch.nn.Module, device:str=None) -> None:
-        
+        """
+        Initialise with the input model and a wrapped model for inference
+        """
         super().__init__(input_model)
         self.wrapped_model = wrap_model(input_model)
         
