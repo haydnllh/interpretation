@@ -1,6 +1,7 @@
 from ..explainer import Explainer
 import numpy as np
 import numpy.typing as npt
+import matplotlib.pyplot as plt
 
 class CPExplainer(Explainer):
     def __init__(self, input_model, input_data):
@@ -33,15 +34,28 @@ class CPExplainer(Explainer):
             return np.array(cp_results)
                 
             
-    def plot(self):
-        pass
+    def plot(
+        self, 
+        X: npt.NDArray,
+        output_idx: int, 
+        feature_idx: int = None, 
+        n_grid: int = 50,
+    ):
+        X_explain = self.explain(X, feature_idx, n_grid)
+        
+        xj = self.data[:, feature_idx]
+        min_xj, max_xj = xj.min(), xj.max()
+        
+        grid = np.linspace(min_xj, max_xj, n_grid, dtype=X.dtype)
+        plt.plot(grid, X_explain[:, output_idx])
+        
     
     def _compute_cp(self, X, feature_idx, n_grid):
         xj = self.data[:, feature_idx]
         min_xj, max_xj = xj.min(), xj.max()
         
-        grid = np.linspace(min_xj, max_xj, n_grid)
-        X_explain = np.vstack((X, ) * n_grid)
+        grid = np.linspace(min_xj, max_xj, n_grid, dtype=X.dtype)
+        X_explain = np.vstack((X, ) * n_grid, dtype=X.dtype)
         X_explain[:, feature_idx] = grid
         
         pred = self.model(X_explain)
