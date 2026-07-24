@@ -1,14 +1,12 @@
-from ...explainer import Explainer
+from ..agnostic_explainer import AgnosticExplainer
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from ....models.wrapper import wrap_model
 
-class CPExplainer(Explainer):
+class CPExplainer(AgnosticExplainer):
     def __init__(self, input_model, input_data):
         super().__init__(input_model)
-        self.model = wrap_model(input_model)
         self.data = input_data
     
     def explain(

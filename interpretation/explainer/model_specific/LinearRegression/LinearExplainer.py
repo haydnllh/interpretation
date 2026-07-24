@@ -1,11 +1,11 @@
-from ...explainer import Explainer
+from ..specific_explainer import SpecificExplainer
 from ....models.wrapper.model_specific.linear_model import LinearModel
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
-class LinearExplainer(Explainer):
+class LinearExplainer(SpecificExplainer):
     def __init__(self, input_model):
         super().__init__(input_model)
         
