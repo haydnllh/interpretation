@@ -21,11 +21,11 @@ class LinearExplainer(SpecificExplainer):
     
     def SSE(self, X, y):
         pred = self.model(X)
-        return np.sum(pred - y)
+        return np.sum((pred - y) ** 2, axis=0)
     
     def SST(self, y):
         mean = np.mean(y, axis=0)
-        return np.sum(y - mean, axis=0)
+        return np.sum((y - mean) ** 2, axis=0)
     
     def R_squared(
         self, 
@@ -52,7 +52,7 @@ class LinearExplainer(SpecificExplainer):
         """
         n_samples, n_features = X.shape
         sse = self.SSE(X, y)
-        sst = self.sst(y)
+        sst = self.SST(y)
         r2 = 1 - sse / sst
         if adjusted:
             return 1 - (1 - r2) * ((n_samples - 1) / (n_samples - n_features - 1)) if adjusted else r2
@@ -99,7 +99,7 @@ class LinearExplainer(SpecificExplainer):
         npt.NDArray
             The t-statistic feature importance of shape (n_features) or (n_output, n_features)
         """
-        se = self.standard_error(X, y)
+        se = self.standard_error(X, y)[..., 1:]
         
         beta = self.coef
         t = beta[None, :] / se
@@ -195,8 +195,8 @@ class LinearExplainer(SpecificExplainer):
         
         ax.boxplot(
             effects,
-            label=feature_names,
-            vert=False
+            vert=False,
+            positions=feature_pos
         )
         ax.set_xlabel("Feature effect")
         ax.set_yticks(feature_pos, feature_names)
