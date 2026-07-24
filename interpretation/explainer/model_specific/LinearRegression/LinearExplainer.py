@@ -69,9 +69,14 @@ class LinearExplainer(SpecificExplainer):
         
         X_design = np.column_stack([np.ones(n_samples), X])
         sigma_squared = np.sum((pred - y) ** 2, axis=0) / (n_samples - n_features - 1)
+        XTX_inv = np.linalg.inv(X_design.T @ X_design)[None, :, :]
         
-        covariance = sigma_squared[:, None, None] * np.linalg.inv(X_design.T @ X_design)[None, :, :]
-        se = np.sqrt(np.diag(covariance, axis1=-2, axis2=-1))
+        if np.ndim(sigma_squared) == 0:
+            covariance = sigma_squared * XTX_inv
+        else:
+            covariance = sigma_squared[:, None, None] * XTX_inv
+        
+        se = np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
         return se
 
         
@@ -133,6 +138,7 @@ class LinearExplainer(SpecificExplainer):
             
         t_value = 1.96
         margin = t_value * self.standard_error(X, y)
+        margin = margin[..., 1:]
         
         coef = self.coef
         if coef.ndim == 2:
@@ -143,7 +149,9 @@ class LinearExplainer(SpecificExplainer):
         ax.errorbar(
             coef,
             feature_pos,
-            xerr=margin
+            xerr=margin,
+            fmt='o',
+            linestyle='none'
         )
         ax.grid()
         ax.set_xlabel("Weight estimate")
@@ -181,7 +189,7 @@ class LinearExplainer(SpecificExplainer):
         coef = self.coef
         if coef.ndim == 2:
             coef = coef[output_idx]
-        feature_pos = np.arange(len(coef))
+        feature_pos = np.arange(1, len(coef) + 1)
         
         effects = X * coef
         
@@ -193,6 +201,7 @@ class LinearExplainer(SpecificExplainer):
         ax.set_xlabel("Feature effect")
         ax.set_yticks(feature_pos, feature_names)
         ax.set_title("Effect plot")
+        ax.grid()
         ax.axvline(0, linestyle="--")
         
         return ax
