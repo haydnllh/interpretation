@@ -64,6 +64,20 @@ class LinearExplainer(SpecificExplainer):
         X: npt.NDArray,
         y: npt.NDArray
     ) -> npt.NDArray:
+        """Computes the standard error of the coefficients
+
+        Parameters
+        ----------
+        X : npt.NDArray
+            Input feature matrix of shape (n_samples, n_features).
+        y : npt.NDArray
+            Target values of shape (n_samples,) or (n_samples, n_output).
+
+        Returns
+        -------
+        npt.NDArray
+            Standard error of coefficients (n_features) or (n_output, n_features).
+        """
         n_samples, n_features = X.shape
         pred = self.model(X)
         
@@ -77,7 +91,7 @@ class LinearExplainer(SpecificExplainer):
             covariance = sigma_squared[:, None, None] * XTX_inv
         
         se = np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
-        return se
+        return se.squeeze()
 
         
     def t_statistic(
@@ -103,7 +117,7 @@ class LinearExplainer(SpecificExplainer):
         
         beta = self.coef
         t = beta[None, :] / se
-        return t
+        return t.squeeze()
     
     def weight_plot(
         self,
