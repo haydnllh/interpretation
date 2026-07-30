@@ -5,12 +5,11 @@ from sklearn.linear_model import Ridge
 
 class LIMEExplainer(AgnosticExplainer):
     """Only works for continuous tabular data"""
-    def __init__(self, input_model, X_train):
+    def __init__(self, input_model, input_data):
         """Initialise the explainer by taking in the model to explain and the observed data to be used for sampling."""
         super().__init__(input_model)
-        self.X_train = X_train
         
-        self.sigma = np.std(X_train, axis=0)
+        self.sigma = np.std(input_data, axis=0)
     
     def explain(
         self, 

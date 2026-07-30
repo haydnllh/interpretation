@@ -12,7 +12,7 @@ class ICEExplainer(AgnosticExplainer):
     def explain(
         self, 
         X: npt.NDArray, 
-        feature_idx: int, 
+        feature_idx: int = None, 
         n_grid: int = 50,
         centered: bool = True
     ) -> npt.NDArray:
@@ -105,8 +105,6 @@ class ICEExplainer(AgnosticExplainer):
         
         if X.ndim != 2:
             raise ValueError("Input expected to be a 2-d array")
-        
-        n_samples = X.shape[0]
         
         X_ice = self.explain(X, feature_idx, n_grid, centered)
         
