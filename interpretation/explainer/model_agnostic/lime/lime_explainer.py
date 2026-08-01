@@ -2,6 +2,7 @@ from ..agnostic_explainer import AgnosticExplainer
 import numpy as np
 import numpy.typing as npt
 from sklearn.linear_model import Ridge
+from ....utils.validate_input import validate_input_1d
 
 class LIMEExplainer(AgnosticExplainer):
     """Only works for continuous tabular data"""
@@ -30,7 +31,10 @@ class LIMEExplainer(AgnosticExplainer):
         npt.NDArray
             An array containing the weights of the local Ridge model with the last element as the bias, (n_features + 1).
         """
-        X = np.squeeze(X)
+        
+        validate_input_1d(X)
+        X = X.reshape(-1)
+        
         n_features = X.shape
         
         X_samples = self._generate_samples(X, n_samples)

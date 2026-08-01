@@ -4,11 +4,11 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
+from ....utils.validate_input import validate_input_label, validate_input_2d
 
 class LinearExplainer(SpecificExplainer):
     def __init__(self, input_model):
         super().__init__(input_model)
-        
         self.model = LinearModel(input_model)
 
     @property
@@ -50,6 +50,9 @@ class LinearExplainer(SpecificExplainer):
             The R-squared value(s). Returns a float for single-output models
             or an array of shape (n_outputs,) for multi-output models.
         """
+        
+        validate_input_label(X, y)
+        
         n_samples, n_features = X.shape
         sse = self.SSE(X, y)
         sst = self.SST(y)
@@ -78,6 +81,9 @@ class LinearExplainer(SpecificExplainer):
         npt.NDArray
             Standard error of coefficients (n_features) or (n_output, n_features).
         """
+        
+        validate_input_label(X, y)
+        
         n_samples, n_features = X.shape
         pred = self.model(X)
         
@@ -113,6 +119,9 @@ class LinearExplainer(SpecificExplainer):
         npt.NDArray
             The t-statistic feature importance of shape (n_features) or (n_output, n_features)
         """
+        
+        validate_input_label(X, y)
+        
         se = self.standard_error(X, y)[..., 1:]
         
         beta = self.coef
@@ -147,6 +156,9 @@ class LinearExplainer(SpecificExplainer):
         Axes
             The axes containing the weight plot.
         """
+        
+        validate_input_label(X, y)
+        
         if ax is None:
             _, ax = plt.subplots()
             
@@ -200,6 +212,9 @@ class LinearExplainer(SpecificExplainer):
         Axes
             The axes containing the effect plot.
         """
+        
+        validate_input_2d(X)
+        
         coef = self.coef
         if coef.ndim == 2:
             coef = coef[output_idx]

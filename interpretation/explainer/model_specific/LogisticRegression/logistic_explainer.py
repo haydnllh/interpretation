@@ -3,8 +3,8 @@ from ....models.wrapper.model_specific.logistic_model import LogisticModel
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from ....utils.validate_input import validate_input_label
 
 class LogisticExplainer(SpecificExplainer):
     def __init__(self, input_model):
@@ -42,6 +42,9 @@ class LogisticExplainer(SpecificExplainer):
         npt.NDArray
             Standard error of coefficients (n_features) or (n_output, n_features).
         """
+        
+        validate_input_label(X, y)
+        
         n_samples, _ = X.shape
         pred = self.model(X)
         
@@ -81,6 +84,9 @@ class LogisticExplainer(SpecificExplainer):
         npt.NDArray
             The t-statistic feature importance of shape (n_features) or (n_output, n_features)
         """
+        
+        validate_input_label(X, y)
+        
         se = self.standard_error(X, y)[..., 1:]
         
         beta = self.coef
@@ -93,7 +99,28 @@ class LogisticExplainer(SpecificExplainer):
         y: npt.NDArray,
         n_grid: int = 50,
         ax: Axes = None
-    ):
+    ) -> Axes:
+        """Plot the coloured decision boundary of the model in addition to scatter plot of the input X and y. 
+
+        Parameters
+        ----------
+        X : npt.NDArray
+            Input feature matrix of shape (n_samples, n_features).
+        y : npt.NDArray
+            Target values of shape (n_samples,) or (n_samples, n_output).
+        n_grid : int, optional
+            Number of grid points generated along each plot axis., by default 50
+        ax : Axes, optional
+            Axes to draw the decision boundary, by default None
+
+        Returns
+        -------
+        Axes
+            The plot of decision boundary.
+        """
+        
+        validate_input_label(X, y)
+        
         _, n_features = X.shape
         pca = PCA(n_components=2)
         

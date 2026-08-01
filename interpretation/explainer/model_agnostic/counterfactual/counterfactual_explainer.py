@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import minimize
 from scipy.stats import median_abs_deviation
+from ....utils.validate_input import validate_input_1d
 
 class CounterfactualExplainer(AgnosticExplainer):
     """Counterfactual explainer using methods proposed by Wachter et al. (2018)."""
@@ -16,19 +17,20 @@ class CounterfactualExplainer(AgnosticExplainer):
     def explain(
         self,
         X: npt.NDArray,
-        desired_y: npt.NDArray,
+        desired_y: float,
         lambda_initial: float = 1e-2,
         lambda_max: float = 1e4,
         lambda_multiplier: float = 10.0,
         tol: float = 1e-3
     ) -> npt.NDArray:
         """Computes a counterfactual that produces a model output specified by desired_y.
+        Only supports scalar labels.
 
         Parameters
         ----------
         X : npt.NDArray
-            The instance to be explained by the counterfactual.
-        desired_y : npt.NDArray
+            The instance to be explained by the counterfactual, (n_features).
+        desired_y : float
             The predefined prediction for the counterfactual explanation to produce.
         lambda_initial : float, optional
             Initial lambda, by default 1e-2
@@ -44,6 +46,10 @@ class CounterfactualExplainer(AgnosticExplainer):
         npt.NDArray
             Counterfactual instance.
         """
+        
+        validate_input_1d(X)
+        X = X.reshape(-1)
+        
         prediction_error = np.inf
         lam = lambda_initial
         

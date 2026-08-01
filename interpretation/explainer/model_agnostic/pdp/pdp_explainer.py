@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
+from ....utils.validate_input import validate_input_2d
 
 class PDPExplainer(AgnosticExplainer):
     def __init__(self, input_model):
@@ -38,11 +39,7 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        if not isinstance(data, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
-        
-        if data.ndim != 2:
-            raise ValueError("Input expected to be a 2-d array")
+        validate_input_2d(X)
                 
         if feature_idx is not None:
             return self._compute_pdp(data, feature_idx, n_grid)
@@ -92,11 +89,8 @@ class PDPExplainer(AgnosticExplainer):
         ValueError
             If data is not two-dimensional.
         """
-        if not isinstance(data, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
         
-        if data.ndim != 2:
-            raise ValueError("Input expected to be a 2-d array")
+        validate_input_2d(data)
         
         X_pdp = self.explain(data, feature_idx, n_grid)
         X_pdp = X_pdp[:, output_idx] if X_pdp.ndim > 1 else X_pdp
@@ -119,16 +113,16 @@ class PDPExplainer(AgnosticExplainer):
         
     
     def _compute_pdp(self, data, feature_idx, n_grid):
-            """Used for computing all model predictions for one varying feature for all data points"""
-            xj = data[:, feature_idx]
-            min_xj, max_xj = xj.min(), xj.max()
+        """Used for computing all model predictions for one varying feature for all data points"""
+        xj = data[:, feature_idx]
+        min_xj, max_xj = xj.min(), xj.max()
+        
+        grid = np.linspace(min_xj, max_xj, n_grid, dtype=data.dtype)
+        
+        n_samples = data.shape[0]
+        X_pdp = np.repeat(data, n_grid, axis=0)
+        X_pdp[:, feature_idx] = np.tile(grid, n_samples)
+        
+        pred = self.model(X_pdp).reshape(n_samples, n_grid, -1).mean(axis=0)
             
-            grid = np.linspace(min_xj, max_xj, n_grid, dtype=data.dtype)
-            
-            n_samples = data.shape[0]
-            X_pdp = np.repeat(data, n_grid, axis=0)
-            X_pdp[:, feature_idx] = np.tile(grid, n_samples)
-            
-            pred = self.model(X_pdp).reshape(n_samples, n_grid, -1).mean(axis=0)
-                
-            return pred
+        return pred

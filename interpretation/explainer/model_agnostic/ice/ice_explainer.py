@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from ....utils.validate_input import validate_input_2d
 
 class ICEExplainer(AgnosticExplainer):
     def __init__(self, input_model, input_data):
@@ -42,11 +43,7 @@ class ICEExplainer(AgnosticExplainer):
             If X is not two-dimensional.
         """
                 
-        if not isinstance(X, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
-        
-        if X.ndim != 2:
-            raise ValueError("Input expected to be a 2-d array")
+        validate_input_2d(X)
         
         if feature_idx is not None:
             return self._compute_ice(X, feature_idx, n_grid, centered)
@@ -100,11 +97,7 @@ class ICEExplainer(AgnosticExplainer):
         ValueError
             If X is not two-dimensional.
         """
-        if not isinstance(X, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
-        
-        if X.ndim != 2:
-            raise ValueError("Input expected to be a 2-d array")
+        validate_input_2d(X)
         
         X_ice = self.explain(X, feature_idx, n_grid, centered)
         

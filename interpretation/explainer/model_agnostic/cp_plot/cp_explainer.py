@@ -3,6 +3,7 @@ import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from ....utils.validate_input import validate_input_1d
 
 class CPExplainer(AgnosticExplainer):
     def __init__(self, input_model, input_data):
@@ -39,11 +40,7 @@ class CPExplainer(AgnosticExplainer):
             If X is not a one-dimensional vector.
         """
                 
-        if not isinstance(X, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
-        
-        if X.ndim > 1 and all(s == 1 for s in X.shape[:-1]):
-            raise ValueError("Input expected to be a 1-d vector")
+        validate_input_1d(X)
         X = X.reshape(-1)
         
         if feature_idx is not None:
@@ -95,11 +92,9 @@ class CPExplainer(AgnosticExplainer):
         ValueError
             If X is not a one-dimensional vector.
         """
-        if not isinstance(X, np.ndarray):
-            raise TypeError("Input must be an instance of np.ndarray")
         
-        if X.ndim > 1 and all(s == 1 for s in X.shape[:-1]):
-            raise ValueError("Input expected to be a 1-d vector")
+        validate_input_1d(X)
+        X = X.reshape(-1)
         
         X_cp = self.explain(X, feature_idx, n_grid)
         
