@@ -18,10 +18,11 @@ class CounterfactualExplainer(AgnosticExplainer):
         self.data = input_data
         self.mad = median_abs_deviation(input_data, axis=0)
         self.safe_mad = np.where(self.mad == 0, 1.0, self.mad)
-        self.safe_r = np.where(self.r == 0, 1.0, self.r)
         self.xl = np.min(input_data, axis=0)
         self.xu = np.max(input_data, axis=0)
         self.r = self.xu - self.xl
+        self.safe_r = np.where(self.r == 0, 1.0, self.r)
+        
         
     def explain(
         self,
@@ -140,7 +141,8 @@ class CounterfactualExplainer(AgnosticExplainer):
         self, 
         X: npt.NDArray, 
         desired_y: float, 
-        k: int = 5
+        k: int = 5,
+        topn: int = 10
     ):
         """Computes a counterfactual via nondominated sorting genetic algorithm.
 
@@ -152,6 +154,8 @@ class CounterfactualExplainer(AgnosticExplainer):
             The predefined prediction for the counterfactual explanation to produce.
         k : int, optional
             Number of samples taken to take average in fourth objective, k > 0, by default 5.
+        topn: int, optional
+            Top n counterfactual to return, by default 10.
 
         Returns
         -------
@@ -180,7 +184,11 @@ class CounterfactualExplainer(AgnosticExplainer):
             termination=get_termination("n_gen", 200),
         )
         
-        return result.X
+        prediction_errors = np.abs(self.model(result.X) - desired_y)
+        top_idx = np.argsort(prediction_errors)
+        cfs = result.X[top_idx[:topn]]
+        
+        return cfs
         
     
     class FourCriteriaLoss(ElementwiseProblem):
