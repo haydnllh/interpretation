@@ -6,7 +6,11 @@ from .model import Model
 class PyTorchModel(Model):
     """This is a wrapper for PyTorch models"""
     
-    def __init__(self, input_model:torch.nn.Module, device:str=None) -> None:
+    def __init__(
+        self, 
+        input_model: torch.nn.Module, 
+        device: torch.device | str = None
+    ) -> None:
         """Wraps a PyTorch model to the superclass"""
         
         if not isinstance(input_model, torch.nn.Module):
@@ -22,12 +26,13 @@ class PyTorchModel(Model):
         
     def __call__(self, X:npt.ArrayLike) -> npt.NDArray[Any]:
         "Model inference"
+        dtype = next(self.model.parameters()).dtype
         
         with torch.no_grad():
             if isinstance(X, torch.Tensor):
-                X = X.to(self.device)
+                X = X.to(self.device, dtype=dtype)
             else:
-                X = torch.tensor(X, device=self.device)
+                X = torch.tensor(X, device=self.device, dtype=dtype)
             
             output = self.model(X)
             

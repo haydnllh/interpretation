@@ -17,7 +17,7 @@ class TfModel(Model):
     def __call__(self, X:npt.ArrayLike) -> npt.NDArray[Any]:
         "Model inference"
         
-        X = tf.convert_to_tensor(X)
+        X = tf.convert_to_tensor(X, dtype=self.model.input_dtype)
         output = self.model(X, training=False)
             
         return output.numpy()
