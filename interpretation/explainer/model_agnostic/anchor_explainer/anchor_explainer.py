@@ -32,6 +32,7 @@ class AnchorExplainer(AgnosticExplainer):
         threshold: float,
         categorical_features: Sequence[int] = None,
         n_samples: int = 1000,
+        beam_width: int = 3
     ) -> list[dict]:
         """Computes the anchor for X using greedy algorithm.
 
@@ -45,6 +46,8 @@ class AnchorExplainer(AgnosticExplainer):
             A list of categorical features indices, by default None
         n_samples : int, optional
             Number of samples to be drawn from `input_data` to calculate precision and coverage, by default 1000
+        beam_width : int, optional
+            Beam width for beam search of optimal anchor, by default 3
 
         Returns
         -------
@@ -74,6 +77,8 @@ class AnchorExplainer(AgnosticExplainer):
             ``threshold`` must be a value between 0 and 1.
         ValueError
             ``n_samples`` must be a positive non-zero integer.
+        ValueError
+            ``beam_width`` must be a positive non-zero integer.
         """
         validate_input_1d(X)
         X = X.reshape(-1)
@@ -82,6 +87,8 @@ class AnchorExplainer(AgnosticExplainer):
             raise ValueError("threshold must be between 0 and 1.")
         if n_samples <= 0 or not isinstance(n_samples, int):
             raise ValueError("n_samples must be a positive non-zero integer.")
+        if not isinstance(beam_width, int) or beam_width <= 0:
+            raise ValueError("beam_width must be a positive non-zero integer.")
         
         if categorical_features is None:
             categorical_features = []
@@ -91,52 +98,50 @@ class AnchorExplainer(AgnosticExplainer):
         X_samples = self.data[samples_idx]
         predicates = self._generate_predicates(X, categorical_features)
         result_predicates = []
-        precision_max = 0
+        beam = [()]
         
-        while precision_max < threshold and len(predicates) > 0:
-            precision_max = 0
-            optimal_predicate = None
-            
+        for _ in range(len(X)):
             candidates = []
-
-            for p in predicates:
-                precision, coverage = self._precision_coverage(
-                    X,
-                    X_samples,
-                    result_predicates + [p],
-                )
-
-                candidates.append((p, precision, coverage))
-
+            for anchor_indices in beam:
+                start = anchor_indices[-1] + 1 if anchor_indices else 0
+                for predicate_idx in range(start, len(predicates)):
+                    new_indices = anchor_indices + (predicate_idx,)
+                    new_anchor = [predicates[idx] for idx in new_indices]
+                    
+                    precision, coverage = self._precision_coverage(
+                        X,
+                        X_samples,
+                        new_anchor
+                    )
+                    candidates.append((new_indices, new_anchor, precision, coverage))
+            
             valid_candidates = [
                 candidate
                 for candidate in candidates
-                if candidate[1] >= threshold
+                if candidate[2] >= threshold
             ]
-
+            
             if valid_candidates:
-                optimal_predicate, precision_max, _ = max(
+                _, optimal_anchor, _, _ = max(
                     valid_candidates,
-                    key=lambda candidate: (
-                        candidate[2],
-                        candidate[1]
-                    )
-                )
-            else:
-                optimal_predicate, precision_max, _ = max(
-                    candidates,
-                    key=lambda candidate: (
-                        candidate[1],
+                    key = lambda candidate: (
+                        candidate[3],
                         candidate[2]
                     )
                 )
-            
-            if optimal_predicate is None:
-                optimal_predicate = predicates[0]
-            predicates.remove(optimal_predicate)
-            result_predicates.append(optimal_predicate)
-            
-        return result_predicates
+                return optimal_anchor
+            else:
+                top_candidates = sorted(
+                    candidates,
+                    key = lambda candidate: (
+                        candidate[2],
+                        candidate[3]
+                    )
+                )[-beam_width:]
+                beam = [c[0] for c in top_candidates]
+                    
+        optimal_anchor = [predicates[idx] for idx in beam[-1]]
+        return optimal_anchor
     
     def _precision_coverage(
         self,
