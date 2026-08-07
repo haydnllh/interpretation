@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from ..explainer import Explainer
-from ...models.wrapper import wrap_model
+from ...models import wrap_model
 
 
 class AgnosticExplainer(Explainer):

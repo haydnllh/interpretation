@@ -1,11 +1,11 @@
-from ..agnostic_explainer import AgnosticExplainer
+from .agnostic_explainer import AgnosticExplainer
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from ....utils.validate_input import validate_input_2d
+from ...utils.validate_input import validate_input_1d
 
-class ICEExplainer(AgnosticExplainer):
+class CPExplainer(AgnosticExplainer):
     def __init__(self, input_model, input_data):
         super().__init__(input_model)
         self.data = input_data
@@ -13,11 +13,10 @@ class ICEExplainer(AgnosticExplainer):
     def explain(
         self, 
         X: npt.NDArray, 
-        feature_idx: int = None, 
-        n_grid: int = 50,
-        centered: bool = True
+        feature_idx: int, 
+        n_grid: int = 50
     ) -> npt.NDArray:
-        """Computes the ICE result for a single row
+        """Computes the Ceteris Paribus (CP) result for a single row
 
         Parameters
         ----------
@@ -26,34 +25,33 @@ class ICEExplainer(AgnosticExplainer):
         feature_idx : int
             Column index of the feature to explain.
         n_grid : int, optional
-            Number of data points generated for the ICE explanation, by default 50.
-        centered: bool, optional
-            Centering so that all explanations start at the same point
+            Number of data points generated for the CP explanation, by default 50.
 
         Returns
         -------
         npt.NDArray
-            Model predictions for all ICE data points.
+            Model predictions for all CP data points.
 
         Raises
         ------
         TypeError
             If X is not a numpy array.
         ValueError
-            If X is not two-dimensional.
+            If X is not a one-dimensional vector.
         """
                 
-        validate_input_2d(X)
+        validate_input_1d(X)
+        X = X.reshape(-1)
         
         if feature_idx is not None:
-            return self._compute_ice(X, feature_idx, n_grid, centered)
+            return self._compute_cp(X, feature_idx, n_grid)
         else:
-            ice_results = []
+            cp_results = []
             for feature_idx in range(X.shape[-1]):
-                result = self._compute_ice(X, feature_idx, n_grid, centered)
-                ice_results.append(result)
+                result = self._compute_cp(X, feature_idx, n_grid)
+                cp_results.append(result)
             
-            return np.array(ice_results)
+            return np.array(cp_results)
                 
             
     def plot(
@@ -63,78 +61,71 @@ class ICEExplainer(AgnosticExplainer):
         output_idx: int = 0, 
         n_grid: int = 50,
         ax: Axes = None,
-        feature_name: str = None,
-        centered: bool = True
+        feature_name: str = None
     ) -> Axes:
-        """Produce visual ICE plots for a given feature and output index
+        """Produce visual CP plots for a given feature and output index
 
         Parameters
         ----------
-        X : npt.NDArray
-            All data points to explain.
+         X : npt.NDArray
+            Data point to explain.
         feature_idx : int
             Column index of the feature to explain.
         output_idx : int
             Since model may have multiple outputs (e.g. multi-class), an index of the output to explain can be specified.
         n_grid : int, optional
-            Number of data points generated for the ICE explanation, by default 50.
+            Number of data points generated for the CP explanation, by default 50.
         ax : Axes, optional
             Axes on which to draw the plot. If None, a new figure and axes are created., by default None
         feature_name : str, optional
             Name of the feature, used for labelling the x-axis, by default None
-        centered: bool, optional
-            Centering so that all explanations start at the same point
 
         Returns
         -------
         Axes
-            The axes containing the ICE plot.
+            The axes containing the Ceteris Paribus plot.
 
         Raises
         ------
         TypeError
             If X is not a numpy array.
         ValueError
-            If X is not two-dimensional.
+            If X is not a one-dimensional vector.
         """
-        validate_input_2d(X)
         
-        X_ice = self.explain(X, feature_idx, n_grid, centered)
+        validate_input_1d(X)
+        X = X.reshape(-1)
+        
+        X_cp = self.explain(X, feature_idx, n_grid)
         
         xj = self.data[:, feature_idx]
         min_xj, max_xj = xj.min(), xj.max()
         
         grid = np.linspace(min_xj, max_xj, n_grid, dtype=X.dtype)
+        
+        y = self.model(np.expand_dims(X, 0))
         
         if ax is None:
             _, ax = plt.subplots()
         
-        ax.plot(grid, X_ice[:, :, output_idx].T)
+        ax.plot(grid, X_cp[:, output_idx], zorder=1)
+        ax.scatter(X[feature_idx], y, c="red", zorder=10)
         ax.grid()
         ax.set_xlabel(feature_name)
         ax.set_ylabel("Prediction")
-        ax.set_title("ICE Plot")
+        ax.set_title("Ceteris Paribus Plot")
         
         return ax
         
     
-    def _compute_ice(self, X, feature_idx, n_grid, centered):
-        """Used for computing all model predictions for one varying feature for all data points"""
+    def _compute_cp(self, X, feature_idx, n_grid):
+        """Used for computing all model predictions for one varying feature"""
         xj = self.data[:, feature_idx]
         min_xj, max_xj = xj.min(), xj.max()
         
         grid = np.linspace(min_xj, max_xj, n_grid, dtype=X.dtype)
+        X_cp = np.vstack((X, ) * n_grid, dtype=X.dtype)
+        X_cp[:, feature_idx] = grid
         
-        n_samples = X.shape[0]
-        X_ice = np.repeat(X, n_grid, axis=0)
-        X_ice[:, feature_idx] = np.tile(grid, n_samples)
-        
-        pred = self.model(X_ice).reshape(n_samples, n_grid, -1)
-        
-        if pred.ndim == 1:
-            pred = pred.reshape(-1, 1)
-            
-        if centered:
-            pred = pred - pred[:, [0]]
-            
+        pred = self.model(X_cp)
         return pred

@@ -1,5 +1,7 @@
 from ..agnostic_explainer import AgnosticExplainer
 from ....utils.validate_input import validate_input_1d
+from .metrics import precision_coverage
+from .predicates import generate_predicates
 import numpy as np
 import numpy.typing as npt
 from typing import Sequence
@@ -96,8 +98,7 @@ class AnchorExplainer(AgnosticExplainer):
         n_samples = min(n_samples, len(self.data))
         samples_idx = np.random.choice(np.arange(0, len(self.data)), size=(n_samples), replace=False)
         X_samples = self.data[samples_idx]
-        predicates = self._generate_predicates(X, categorical_features)
-        result_predicates = []
+        predicates = generate_predicates(X, categorical_features, self.lq, self.median, self.uq)
         beam = [()]
         
         for _ in range(len(X)):
@@ -108,10 +109,12 @@ class AnchorExplainer(AgnosticExplainer):
                     new_indices = anchor_indices + (predicate_idx,)
                     new_anchor = [predicates[idx] for idx in new_indices]
                     
-                    precision, coverage = self._precision_coverage(
+                    precision, coverage = precision_coverage(
                         X,
                         X_samples,
-                        new_anchor
+                        new_anchor,
+                        self.model,
+                        self.is_prob
                     )
                     candidates.append((new_indices, new_anchor, precision, coverage))
             
@@ -142,84 +145,3 @@ class AnchorExplainer(AgnosticExplainer):
                     
         optimal_anchor = [predicates[idx] for idx in beam[-1]]
         return optimal_anchor
-    
-    def _precision_coverage(
-        self,
-        X,
-        X_samples,
-        anchor,
-    ):
-        """Computes the precision and coverage for an anchor"""
-        pred_X = self.model(X.reshape(1, -1))
-        pred_samples = self.model(X_samples)
-        mask = np.ones(X_samples.shape[0], dtype=bool)
-        
-        binary = (pred_samples.ndim == 2 and pred_samples.shape[-1] == 1) \
-            or (pred_samples.ndim == 1)
-        
-        if self.is_prob and binary:
-            label_X = pred_X > 0.5
-            label_samples = (pred_samples > 0.5).astype(int)
-        elif self.is_prob and not binary:
-            label_X = np.argmax(pred_X, axis=1)
-            label_samples = np.argmax(pred_samples, axis=1)
-        else:
-            label_X, label_samples = pred_X, pred_samples
-        label_X = int(label_X)
-        label_samples = label_samples.astype(int).reshape(-1)
-        
-        for p in anchor:
-            feature = X_samples[:, p["idx"]]
-            if p["categorical"]:
-                predicate_mask = feature == p["value"]
-            else:
-                predicate_mask = (feature > p["lower"]) & (feature <= p["upper"])
-            mask &= predicate_mask
-            
-        if not np.any(mask):
-            return 0.0, 0.0
-        
-        precision = np.mean(label_samples[mask] == label_X)
-        coverage = np.mean(mask)
-        
-        return precision, coverage
-        
-    
-    def _generate_predicates(
-        self,
-        X,
-        categorical_features,
-    ):
-        """Generate all predicates for a given instance, categorical or non-categorical."""
-        ps = []
-        
-        for i in range (len(X)):
-            if i in categorical_features:
-                ps.append({
-                    "idx": i,
-                    "categorical": True,
-                    "value": X[i]
-                })
-            else:
-                lq, m, uq = self.lq[i], self.median[i], self.uq[i]
-                quantiles = np.array([lq, m ,uq])
-                idx_quantile = np.searchsorted(quantiles, X[i], side="left")
-                
-                match idx_quantile:
-                    case 0:
-                        lower, upper = -np.inf, lq
-                    case 1:
-                        lower, upper = lq, m
-                    case 2:
-                        lower, upper = m, uq
-                    case 3:
-                        lower, upper = uq, np.inf
-                        
-                ps.append({
-                    "idx": i,
-                    "categorical": False,
-                    "lower": lower,
-                    "upper": upper
-                })
-                
-        return ps

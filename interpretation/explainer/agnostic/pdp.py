@@ -1,9 +1,9 @@
-from ..agnostic_explainer import AgnosticExplainer
+from .agnostic_explainer import AgnosticExplainer
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
-from ....utils.validate_input import validate_input_2d
+from ...utils.validate_input import validate_input_2d
 
 class PDPExplainer(AgnosticExplainer):
     def __init__(self, input_model):

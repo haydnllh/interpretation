@@ -1,5 +1,5 @@
 from ..specific_explainer import SpecificExplainer
-from ....models.wrapper.model_specific.linear_model import LinearModel
+from ....models.linear_model import LinearModel
 import numpy as np
 import numpy.typing as npt
 from matplotlib.axes import Axes
