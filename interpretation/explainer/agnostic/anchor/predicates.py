@@ -3,9 +3,9 @@ import numpy as np
 def generate_predicates(
     X,
     categorical_features,
-    lq,
+    lower_q,
     median,
-    uq
+    upper_q
 ):
     """Generate all predicates for a given instance, categorical or non-categorical."""
     ps = []
@@ -18,7 +18,7 @@ def generate_predicates(
                 "value": X[i]
             })
         else:
-            lq, m, uq = lq[i], median[i], uq[i]
+            lq, m, uq = lower_q[i], median[i], upper_q[i]
             quantiles = np.array([lq, m ,uq])
             idx_quantile = np.searchsorted(quantiles, X[i], side="left")
             
