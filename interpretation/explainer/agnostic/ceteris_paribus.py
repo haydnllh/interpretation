@@ -67,7 +67,7 @@ class CPExplainer(AgnosticExplainer):
 
         Parameters
         ----------
-         X : npt.NDArray
+        X : npt.NDArray
             Data point to explain.
         feature_idx : int
             Column index of the feature to explain.
@@ -91,6 +91,8 @@ class CPExplainer(AgnosticExplainer):
             If X is not a numpy array.
         ValueError
             If X is not a one-dimensional vector.
+        ValueError
+            If model returns class labels instead of probabilities
         """
         
         validate_input_1d(X)
@@ -107,8 +109,15 @@ class CPExplainer(AgnosticExplainer):
         
         if ax is None:
             _, ax = plt.subplots()
+            
+        if y.dtype == int:
+            raise ValueError("Model must return class probabilities not class labels.")
         
-        ax.plot(grid, X_cp[:, output_idx], zorder=1)
+        if X_cp.ndim != 1:
+            X_cp = X_cp[:, output_idx]
+            y = y.squeeze()[output_idx]
+        
+        ax.plot(grid, X_cp, zorder=1)
         ax.scatter(X[feature_idx], y, c="red", zorder=10)
         ax.grid()
         ax.set_xlabel(feature_name)

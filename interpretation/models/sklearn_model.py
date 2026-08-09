@@ -1,4 +1,4 @@
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_classifier
 import numpy as np
 import numpy.typing as npt 
 from typing import Any
@@ -19,6 +19,9 @@ class SklearnModel(Model):
         "Model inference"
         
         X = np.asarray(X)
-        output = self.model.predict(X)
         
-        return output
+        if is_classifier(self.model):
+            pred = self.model.predict_proba(X)
+            return pred[:, 1] if pred.shape[-1] == 2 else pred
+            
+        return self.model.predict(X)
