@@ -3,7 +3,7 @@ import tensorflow as tf
 import sklearn
 import numpy as np
 import pytest
-from interpretation.models.wrapper import wrap_model
+from interpretation.models import wrap_model
 
 def test_pytorch_wrapper():
     pytorch_model = torch.nn.Linear(1, 1)
