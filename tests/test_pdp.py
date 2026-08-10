@@ -1,5 +1,5 @@
 import numpy as np
-from interpretation.explainer.agnostic import ICEExplainer
+from interpretation.explainer.agnostic import PDPExplainer
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import pytest
@@ -7,22 +7,20 @@ import pytest
 def test_regressor(regressor):
     model, X, y = regressor
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     result = explainer.explain(
         X[:20],
         feature_idx=0,
         n_grid=50,
-        centered=True
     )
     
     assert result is not None
-    assert result.shape == (20, 50)
-    assert all(result[:, 0] == 0.0)
+    assert result.shape == (50,)
     
 def test_binary_classifier(binary_classifier):
     model, X, y = binary_classifier
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     result = explainer.explain(
         X[:20],
         feature_idx=0,
@@ -30,12 +28,12 @@ def test_binary_classifier(binary_classifier):
     )
     
     assert result is not None
-    assert result.shape == (20, 50)
+    assert result.shape == (50,)
     
 def test_multiclass_classifier(multiclass_classifier):
     model, X, y = multiclass_classifier
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     result = explainer.explain(
         X[:20],
         feature_idx=0,
@@ -43,12 +41,12 @@ def test_multiclass_classifier(multiclass_classifier):
     )
     
     assert result is not None
-    assert result.shape == (20, 50, len(np.unique(y)))
+    assert result.shape == (50, len(np.unique(y)))
     
 def test_plots(regressor):
     model, X, y = regressor
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     
     ax = explainer.plot(
         X[:20],
@@ -63,7 +61,7 @@ def test_plots(regressor):
 def test_plots_multiclass(multiclass_classifier):
     model, X, y = multiclass_classifier
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     
     ax = explainer.plot(
         X[:20],
@@ -79,7 +77,7 @@ def test_plots_multiclass(multiclass_classifier):
 def test_input(regressor):
     model, X, y = regressor
     
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
     
     with pytest.raises(ValueError, match="Input expected to be a 2-d array"):
         explainer.explain(X[0], feature_idx=0)
@@ -90,7 +88,7 @@ def test_input(regressor):
 def test_all_features(regressor):
     model, X, y = regressor
 
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
 
     result = explainer.explain(
         X[:20],
@@ -98,12 +96,12 @@ def test_all_features(regressor):
         n_grid=50
     )
 
-    assert result.shape == (X.shape[1], 20, 50)
+    assert result.shape == (X.shape[1], 50)
     
 def test_all_features_multiclass(multiclass_classifier):
     model, X, y = multiclass_classifier
 
-    explainer = ICEExplainer(model, X)
+    explainer = PDPExplainer(model)
 
     result = explainer.explain(
         X[:20],
@@ -111,5 +109,5 @@ def test_all_features_multiclass(multiclass_classifier):
         n_grid=50
     )
 
-    assert result.shape == (X.shape[1], 20, 50, len(np.unique(y))
+    assert result.shape == (X.shape[1], 50, len(np.unique(y))
     )

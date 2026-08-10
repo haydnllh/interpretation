@@ -39,7 +39,7 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        validate_input_2d(X)
+        validate_input_2d(data)
                 
         if feature_idx is not None:
             return self._compute_pdp(data, feature_idx, n_grid)
@@ -123,6 +123,11 @@ class PDPExplainer(AgnosticExplainer):
         X_pdp = np.repeat(data, n_grid, axis=0)
         X_pdp[:, feature_idx] = np.tile(grid, n_samples)
         
-        pred = self.model(X_pdp).reshape(n_samples, n_grid, -1).mean(axis=0)
+        pred = self.model(X_pdp)
+        
+        if pred.ndim == 1:
+            pred = pred.reshape(n_samples, n_grid)
+        else:
+            pred = pred.reshape(n_samples, n_grid, -1)
             
-        return pred
+        return pred.mean(axis=0)

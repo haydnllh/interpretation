@@ -94,7 +94,7 @@ def test_input(regressor):
         explainer.explain(X[:4], feature_idx=0)
         
     with pytest.raises(ValueError, match="Input expected to be a 1-d vector"):
-            explainer.plot(X[:4], feature_idx=0)
+        explainer.plot(X[:4], feature_idx=0)
             
 def test_all_features(regressor):
     model, X, y = regressor
