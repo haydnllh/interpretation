@@ -20,7 +20,7 @@ def validate_input_1d(X):
     if not isinstance(X, np.ndarray):
         raise TypeError("Input must be an instance of np.ndarray")
     
-    if X.ndim > 1 and all(s == 1 for s in X.shape[:-1]):
+    if X.ndim > 1 and not all(s == 1 for s in X.shape[:-1]):
         raise ValueError("Input expected to be a 1-d vector")
     
 def validate_input_2d(X):
