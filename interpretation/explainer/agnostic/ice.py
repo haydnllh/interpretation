@@ -109,7 +109,9 @@ class ICEExplainer(AgnosticExplainer):
         if ax is None:
             _, ax = plt.subplots()
         
-        ax.plot(grid, X_ice[:, :, output_idx].T)
+        X_ice = X_ice[:, :, output_idx] if X_ice.ndim == 3 else X_ice
+        
+        ax.plot(grid, X_ice.T)
         ax.grid()
         ax.set_xlabel(feature_name)
         ax.set_ylabel("Prediction")
@@ -129,12 +131,17 @@ class ICEExplainer(AgnosticExplainer):
         X_ice = np.repeat(X, n_grid, axis=0)
         X_ice[:, feature_idx] = np.tile(grid, n_samples)
         
-        pred = self.model(X_ice).reshape(n_samples, n_grid, -1)
+        pred = self.model(X_ice)
         
         if pred.ndim == 1:
-            pred = pred.reshape(-1, 1)
+            pred = pred.reshape(n_samples, n_grid)
+        else:
+            pred = pred.reshape(n_samples, n_grid, pred.shape[-1])
             
         if centered:
-            pred = pred - pred[:, [0]]
+            if pred.ndim == 2:
+                pred = pred - pred[:, [0]]
+            else:
+                pred = pred - pred[:, [0], :]
             
         return pred
