@@ -1,9 +1,3 @@
-# This is a library for interpreting black box models
-
-Based on: https://christophm.github.io/interpretable-ml-book/
-
-## Example
-```python
 from sklearn.datasets import make_regression
 from sklearn.linear_model import LinearRegression
 from interpretation.explainer.agnostic.counterfactual import CounterfactualExplainer
@@ -37,37 +31,3 @@ f"""
     Counterfactual: {result}, Prediction: {model.predict(result[None, :])}
 """
 )
-```
-
-## Setting up the repository
-
-Clone the repo
-```bash
-git clone https://github.com/haydnllh/interpretation.git
-```
-
-Set up conda environment:
-```bash
-conda create -n interpretation python=3.11
-conda activate interpretation
-```
-
-Install requirements.txt
-```bash
-pip install -r requirements.txt
-```
-
-Install torch depending on your device \
-For CPUs:
-```bash
-pip install torch
-```
-For CUDA:
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/{YOUR_CUDA_VERSION}
-```
-
-To check CUDA version:
-```bash
-nvidia-smi
-```
