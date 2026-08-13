@@ -1,10 +1,17 @@
 from ..agnostic_explainer import AgnosticExplainer
+from ....utils.validate_input import validate_input_2d
 from .permutation import generate_permutations
 import numpy as np
 import numpy.typing as npt 
 import math
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 class SHAPExplainer(AgnosticExplainer):
+    """
+    SHAP explainer estimates the Shapley values of a given instance.
+    Only support tabular data and model output with dimension 1 at the moment.
+    """
     def __init__(self, input_model, input_data):
         super().__init__(input_model)
         self.data = input_data
@@ -12,35 +19,104 @@ class SHAPExplainer(AgnosticExplainer):
     def explain(
         self,
         X:npt.NDArray,
-        n_permutation,
-        n_sample
-    ):
-        n_features = len(X)
-        n_rows = self.data.shape[0]
-        n_sample = min(n_rows, n_sample)
-        if n_features < 21:
-            n_permutation = min(n_permutation, math.factorial(n_features))
+        n_permutations:int = 10,
+        n_samples:int = 100
+    ) -> tuple[npt.NDArray, npt.NDArray]:
+        """Estimate Shapley values for input instances using permutation sampling.
 
-        sample_idx = np.random.choice(self.data.shape[0], size=n_sample, replace=False)
-        samples = self.data[sample_idx]  
+        Parameters
+        ----------
+        X : npt.NDArray
+            The instances to be explained by the Shapley values, (n_instances, n_features).
+        n_permutations : int, optional
+            The number of permutations to sample for estimating Shapley values, by default 10.
+        n_samples : int, optional
+            The number of background reference samples to draw from `input_data` to marginalise out missing features, by default 100.
+
+        Returns
+        -------
+        phis_matrix : npt.NDArray
+            A 2D array of estimated Shapley values ($\phi$) representing the contribution of each feature in `X` to the model's prediction, (n_instances, n_features).
+        pred_mean : npt.NDArray
+            The baseline model prediction used to compute the Shapley values.
+        """
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
         
-        perm_sample, perm_idx = generate_permutations(
-            X,
-            samples,
-            n_permutation,
+        n_instances, n_features = X.shape
+        n_rows = self.data.shape[0]
+        n_samples = min(n_rows, n_samples)
+        if n_features < 21:
+            n_permutations = min(n_permutations, math.factorial(n_features))
+
+        sample_idx = np.random.choice(self.data.shape[0], size=n_samples, replace=False)
+        samples = self.data[sample_idx]  
+        pred_mean = self.model(samples).mean()
+        
+        phis_matrix = np.zeros_like(X, dtype=float)
+        
+        for i in range(n_instances):
+            X_inst = X[i]
+            perm_sample, perm_idx = generate_permutations(
+                X_inst,
+                samples,
+                n_permutations,
+            )
+            
+            pred_perm = self.model(perm_sample.reshape(-1, n_features))
+            pred_perm = pred_perm.reshape(n_permutations, n_features, n_samples).mean(axis=2)
+
+            pred_perm = np.insert(pred_perm, 0, pred_mean, axis=1)
+
+            for p_perm, p_idx in zip(pred_perm, perm_idx):
+                contributions = np.diff(p_perm)
+                phis_matrix[i, p_idx] += contributions
+            
+        phis_matrix /= n_permutations
+        return phis_matrix, pred_mean
+
+    def beeswarm(
+        self,
+        X: npt.NDArray,
+        n_permutations: int = 10,
+        n_samples: int = 100,
+        feature_names: list[str] | None = None,
+        max_n_features: int = 10,
+        ax: plt.Axes | None = None
+    ) -> tuple[plt.Figure, plt.Axes]:
+        n_instances, n_features = X.shape
+        n_display_features = min(max_n_features, n_features)
+        
+        phis_matrix, _ = self.explain(X, n_permutations, n_samples)
+        mean_abs_phi = np.mean(np.abs(phis_matrix), axis=0)
+        ranked_idx = np.argsort(mean_abs_phi)[::-1][:max_n_features]
+        ranked_idx = ranked_idx[::-1]
+        phis_matrix_ranked = phis_matrix[:, ranked_idx]
+        X_ranked = X[:, ranked_idx]
+        
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, max(4, len(ranked_idx) * 0.6)))
+        else:
+            fig = ax.figure
+            
+        shap_cmap = LinearSegmentedColormap.from_list("shap_cmap", ["#008bfb", "#ff0051"])
+        
+        y = np.tile(np.arange(n_display_features), (n_instances, 1))
+        jitter = np.random.uniform(-0.2, 0.2, size=(n_instances, n_display_features))
+        y = y + jitter
+        
+        fmax, fmin = np.max(X_ranked, axis=0)[None, :], np.min(X_ranked, axis=0)[None, :]
+        diff = fmax - fmin
+        diff[diff == 0] = 1.0
+        f_norm = (X_ranked - fmin) / diff
+        
+        ax.scatter(
+            phis_matrix_ranked.ravel(),
+            y.ravel(),
+            c=f_norm.ravel(),
+            cmap=shap_cmap,
+            s=10,
+            linewidths=0
         )
         
-        pred_perm = self.model(perm_sample.reshape(-1, n_features))
-        pred_perm = pred_perm.reshape(n_permutation, n_features, n_sample).mean(axis=2)
-
-        pred_mean = self.model(samples).mean()
-        pred_perm = np.insert(pred_perm, 0, pred_mean, axis=1)
-
-        phis = np.zeros(n_features)
-
-        for p_perm, p_idx in zip(pred_perm, perm_idx):
-            contributions = np.diff(p_perm)
-            phis[p_idx] += contributions
-            
-        phis /= n_permutation
-        return phis
+        return fig, ax
