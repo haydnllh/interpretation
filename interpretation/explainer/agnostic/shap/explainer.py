@@ -40,8 +40,8 @@ class SHAPExplainer(AgnosticExplainer):
         pred_mean : npt.NDArray
             The baseline model prediction used to compute the Shapley values.
         """
-        if X.ndim == 1:
-            X = X.reshape(1, -1)
+        
+        X = validate_input_2d(X)
         
         n_instances, n_features = X.shape
         n_rows = self.data.shape[0]
@@ -94,15 +94,18 @@ class SHAPExplainer(AgnosticExplainer):
         phis_matrix_ranked = phis_matrix[:, ranked_idx]
         X_ranked = X[:, ranked_idx]
         
+        if feature_names is None:
+            feature_names = [f"Feature {i}" for i in range(n_features)]
+        
         if ax is None:
-            fig, ax = plt.subplots(figsize=(8, max(4, len(ranked_idx) * 0.6)))
+            fig, ax = plt.subplots(figsize=(8, max(4, len(ranked_idx) * 0.5)))
         else:
             fig = ax.figure
             
         shap_cmap = LinearSegmentedColormap.from_list("shap_cmap", ["#008bfb", "#ff0051"])
         
         y = np.tile(np.arange(n_display_features), (n_instances, 1))
-        jitter = np.random.uniform(-0.2, 0.2, size=(n_instances, n_display_features))
+        jitter = np.random.uniform(-0.15, 0.15, size=(n_instances, n_display_features))
         y = y + jitter
         
         fmax, fmin = np.max(X_ranked, axis=0)[None, :], np.min(X_ranked, axis=0)[None, :]
@@ -110,13 +113,24 @@ class SHAPExplainer(AgnosticExplainer):
         diff[diff == 0] = 1.0
         f_norm = (X_ranked - fmin) / diff
         
-        ax.scatter(
+        scatter = ax.scatter(
             phis_matrix_ranked.ravel(),
             y.ravel(),
             c=f_norm.ravel(),
             cmap=shap_cmap,
             s=10,
-            linewidths=0
+            linewidths=0,
+            zorder=10
         )
+        ax.set_yticks(range(len(ranked_idx)))
+        ax.set_yticklabels([feature_names[i] for i in ranked_idx])
+        ax.set_xlabel("SHAP Value (feature contribution)")
+        ax.set_title("SHAP Beeswarm Plot",fontweight="bold", pad=12)
+        ax.axvline(0, color="lightgrey", linewidth=1, alpha=0.5, zorder=1)
+        
+        cbar = fig.colorbar(scatter, ax=ax, aspect=25, pad=0.04)
+        cbar.set_label("Feature Value", rotation=270, labelpad=15, fontsize=10)
+        cbar.set_ticks([0, 1])
+        cbar.set_ticklabels(["Low", "High"])
         
         return fig, ax
