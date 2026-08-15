@@ -34,8 +34,7 @@ class LIMEExplainer(AgnosticExplainer):
             An array containing the weights of the local Ridge model with the last element as the bias, (n_features + 1).
         """
         
-        validate_input_1d(X)
-        X = X.reshape(-1)
+        X = validate_input_1d(X)
         
         n_features = X.shape
         

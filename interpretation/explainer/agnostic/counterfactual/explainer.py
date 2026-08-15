@@ -61,8 +61,7 @@ class CounterfactualExplainer(AgnosticExplainer):
             If ``method`` is not one of the supported methods.
         """
         
-        validate_input_1d(X)
-        X = X.reshape(-1)
+        X = validate_input_1d(X)
         
         if method == "wachter":
             cf = self.wachter(X, desired_y, **method_kwargs)

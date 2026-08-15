@@ -159,6 +159,9 @@ class LinearExplainer(SpecificExplainer):
         
         validate_input_label(X, y)
         
+        if feature_names is None:
+            feature_names = [f"Feature {i}" for i in range(n_features)]
+        
         if ax is None:
             _, ax = plt.subplots()
             
@@ -214,6 +217,9 @@ class LinearExplainer(SpecificExplainer):
         """
         
         validate_input_2d(X)
+        
+        if feature_names is None:
+            feature_names = [f"Feature {i}" for i in range(n_features)]
         
         coef = self.coef
         if coef.ndim == 2:

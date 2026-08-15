@@ -40,8 +40,7 @@ class CPExplainer(AgnosticExplainer):
             If X is not a one-dimensional vector.
         """
                 
-        validate_input_1d(X)
-        X = X.reshape(-1)
+        X = validate_input_1d(X)
         
         if feature_idx is not None:
             return self._compute_cp(X, feature_idx, n_grid)
@@ -95,8 +94,7 @@ class CPExplainer(AgnosticExplainer):
             If model returns class labels instead of probabilities
         """
         
-        validate_input_1d(X)
-        X = X.reshape(-1)
+        X = validate_input_1d(X)
         
         X_cp = self.explain(X, feature_idx, n_grid)
         

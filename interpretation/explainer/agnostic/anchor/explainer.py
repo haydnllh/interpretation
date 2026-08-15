@@ -82,8 +82,7 @@ class AnchorExplainer(AgnosticExplainer):
         ValueError
             ``beam_width`` must be a positive non-zero integer.
         """
-        validate_input_1d(X)
-        X = X.reshape(-1)
+        X = validate_input_1d(X)
         
         if not 0 <= threshold <= 1:
             raise ValueError("threshold must be between 0 and 1.")

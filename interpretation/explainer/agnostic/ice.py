@@ -43,7 +43,7 @@ class ICEExplainer(AgnosticExplainer):
             If X is not two-dimensional.
         """
                 
-        validate_input_2d(X)
+        X = validate_input_2d(X)
         
         if feature_idx is not None:
             return self._compute_ice(X, feature_idx, n_grid, centered)
@@ -97,7 +97,8 @@ class ICEExplainer(AgnosticExplainer):
         ValueError
             If X is not two-dimensional.
         """
-        validate_input_2d(X)
+        
+        X = validate_input_2d(X)
         
         X_ice = self.explain(X, feature_idx, n_grid, centered)
         

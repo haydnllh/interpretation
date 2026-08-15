@@ -39,7 +39,7 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        validate_input_2d(data)
+        X = validate_input_2d(data)
                 
         if feature_idx is not None:
             return self._compute_pdp(data, feature_idx, n_grid)
@@ -90,7 +90,7 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        validate_input_2d(data)
+        X = validate_input_2d(data)
         
         X_pdp = self.explain(data, feature_idx, n_grid)
         X_pdp = X_pdp[:, output_idx] if X_pdp.ndim > 1 else X_pdp
