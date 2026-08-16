@@ -11,7 +11,7 @@ class PDPExplainer(AgnosticExplainer):
         
     def explain(
         self,
-        data: npt.NDArray,
+        X: npt.NDArray,
         feature_idx: int = None,
         n_grid: int = 50
     ) -> npt.NDArray:
@@ -39,21 +39,21 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        X = validate_input_2d(data)
+        X = validate_input_2d(X)
                 
         if feature_idx is not None:
-            return self._compute_pdp(data, feature_idx, n_grid)
+            return self._compute_pdp(X, feature_idx, n_grid)
         else:
             pdp_results = []
-            for feature_idx in range(data.shape[-1]):
-                result = self._compute_pdp(data, feature_idx, n_grid)
+            for feature_idx in range(X.shape[-1]):
+                result = self._compute_pdp(X, feature_idx, n_grid)
                 pdp_results.append(result)
             
             return np.array(pdp_results)
         
     def plot(
         self, 
-        data: npt.NDArray,
+        X: npt.NDArray,
         feature_idx: int, 
         output_idx: int = 0, 
         n_grid: int = 50,
@@ -90,15 +90,15 @@ class PDPExplainer(AgnosticExplainer):
             If data is not two-dimensional.
         """
         
-        X = validate_input_2d(data)
+        X = validate_input_2d(X)
         
-        X_pdp = self.explain(data, feature_idx, n_grid)
+        X_pdp = self.explain(X, feature_idx, n_grid)
         X_pdp = X_pdp[:, output_idx] if X_pdp.ndim > 1 else X_pdp
         
-        xj = data[:, feature_idx]
+        xj = X[:, feature_idx]
         min_xj, max_xj = xj.min(), xj.max()
         
-        grid = np.linspace(min_xj, max_xj, n_grid, dtype=data.dtype)
+        grid = np.linspace(min_xj, max_xj, n_grid, dtype=X.dtype)
         
         if ax is None:
             _, ax = plt.subplots()
