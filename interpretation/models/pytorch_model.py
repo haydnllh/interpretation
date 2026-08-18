@@ -1,6 +1,7 @@
 import torch
 import numpy.typing as npt
 from typing import Any
+from typing import Callable, Tuple, Any, Dict
 from .model import Model
 
 class PyTorchModel(Model):
@@ -24,7 +25,13 @@ class PyTorchModel(Model):
         self.model.to(self.device)
         self.model.eval()
         
-    def __call__(self, X:npt.ArrayLike) -> npt.NDArray[Any]:
+        self.layer_dict = {
+            name: module
+            for name, module in self.model.named_modules()
+            if len(list(module.children())) == 0
+        }
+        
+    def __call__(self, X:npt.NDArray | torch.Tensor) -> npt.NDArray[Any]:
         "Model inference"
         dtype = next(self.model.parameters()).dtype
         
@@ -38,7 +45,11 @@ class PyTorchModel(Model):
             
         return output.detach().cpu().numpy()
     
-    def activation_at_layer(self, X:npt.NDArray, layer_identifier: int | str | list[int | str]) -> list[npt.NDArray]:
+    def activation_at_layer(
+        self, 
+        X: npt.NDArray | torch.Tensor, 
+        layer_identifier: int | str | list[int | str]
+    ) -> list[npt.NDArray]:
         """
         Forward passes input X up to the specified layer.
         layer_identifier can be an integer index or layer name string.
@@ -47,7 +58,7 @@ class PyTorchModel(Model):
             layer_identifier = [layer_identifier]
             
         target_modules = {}
-        all_modules = [m for m in self.model.modules() if m != self.model]
+        all_modules = [m for m in self.model.modules()][1:]
             
         for out_idx, identifier in enumerate(layer_identifier):
             if isinstance(identifier, int):
@@ -78,3 +89,74 @@ class PyTorchModel(Model):
                 h.remove()
         
         return activations
+    
+    def compute_gradients(
+        self,
+        X: npt.NDArray | torch.Tensor,
+        objective_layer: int | str,
+        objective_fn: Callable[[torch.Tensor], torch.tensor],
+        wrt_layer: int | str = None
+    ) -> npt.NDArray:
+        r"""
+        Computes the gradient :math:`(\partial Objective) / (\partial X)
+        `objective_layer` is Objective, `wrt_layer` is X.
+        The gradient is after the objective function is applied to the objective layer w.r.t the wrt layer.
+        When no `wrt_layer` is provided, it will default to 'input'.
+        """
+        dtype = next(self.model.parameters()).dtype
+        
+        if isinstance(X, torch.Tensor):
+            X_tensor = X.to(self.device, dtype=dtype)
+        else:
+            X_tensor = torch.tensor(X, device=self.device, dtype=dtype)        
+                    
+        activations = {}
+        hooks = []
+        
+        def hook_generator(name):
+            def hook(module, input, output):
+                activations[name] = output
+            return hook
+            
+        obj_name = self._layer_int_to_name(objective_layer)
+        wrt_name = self._layer_int_to_name(wrt_layer) if wrt_layer is not None else "input"
+        
+        hooks.append(self.layer_dict[obj_name].register_forward_hook(hook_generator("obj")))
+        if wrt_name != "input":
+            hooks.append(self.layer_dict[wrt_name].register_forward_hook(hook_generator("wrt")))
+            
+        try:
+            if wrt_name == "input":
+                target_wrt = X_tensor
+                target_wrt.requires_grad_()
+            
+                _ = self.model(target_wrt)
+            else:
+                def retain_grad_hook(module, input, output):
+                    output.retain_grad()
+                    activations["wrt"] = output
+                    
+                hooks.append(self.layer_dict[wrt_name].register_forward_hook(retain_grad_hook))
+                
+                _ = self.model(X_tensor)
+                target_wrt = activations["wrt"]
+                
+            obj_activation = activations["obj"]
+            loss = objective_fn(obj_activation)
+            
+            if target_wrt.grad is not None:
+                target_wrt.grad.zero_()
+            loss.backward()
+            
+            grad = target_wrt.grad.detach().cpu().numpy()
+
+            return grad
+        
+        finally:
+            for h in hooks:
+                h.remove()
+        
+    def _layer_int_to_name(self, layer_id: int | str) -> str:
+        if isinstance(layer_id, int):
+            return list(self.layer_dict.keys())[layer_id]
+        return layer_id
