@@ -73,6 +73,14 @@ class TfModel(Model):
         objective_fn: Callable[[tf.Tensor], tf.Tensor],
         wrt_layer: int | str | None = None,
     ):
+        r"""Computes the gradient \(\frac{\partial \text{Objective}}{\partial X}\).
+        
+        `objective_layer` is Objective, `wrt_layer` is X.
+
+        The gradient is calculated after applying the objective function to the objective layer w.r.t the wrt layer.
+
+        Note: When no `wrt_layer` is provided, it will default to `'input'`.
+        """
         if isinstance(X, tf.Tensor):
             X_tensor = tf.cast(X, dtype=self.dtype)
         else:
@@ -140,16 +148,6 @@ class TfModel(Model):
             )
         
         return grad.numpy()
-        
-    def _get_layer_output(self, identifier: int | str) -> tf.TypeSpec:
-        try:
-            if isinstance(identifier, int):
-                return self.model.layers[identifier].output
-            return self.model.get_layer(name=identifier).output
-        except (IndexError, ValueError):
-            raise ValueError(
-                f"Layer '{identifier}' not found in TensorFlow model."
-            )
             
     def _get_layer_idx(self, identifier: int | str) -> int:
         if isinstance(identifier, int):

@@ -97,11 +97,13 @@ class PyTorchModel(Model):
         objective_fn: Callable[[torch.Tensor], torch.tensor],
         wrt_layer: int | str = None
     ) -> npt.NDArray:
-        r"""
-        Computes the gradient :math:`(\partial Objective) / (\partial X)
+        r"""Computes the gradient \(\frac{\partial \text{Objective}}{\partial X}\).
+
         `objective_layer` is Objective, `wrt_layer` is X.
-        The gradient is after the objective function is applied to the objective layer w.r.t the wrt layer.
-        When no `wrt_layer` is provided, it will default to 'input'.
+
+        The gradient is calculated after applying the objective function to the objective layer w.r.t the wrt layer.
+
+        Note: When no `wrt_layer` is provided, it will default to `'input'`.
         """
         dtype = next(self.model.parameters()).dtype
         
