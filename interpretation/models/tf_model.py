@@ -66,7 +66,7 @@ class TfModel(Model):
                 return [a.numpy() for a in activations]
         return activations.numpy()
     
-    def compute_gradient(
+    def compute_gradients(
         self,
         X: npt.NDArray | tf.Tensor,
         objective_layer: int | str,

@@ -1,10 +1,9 @@
 from typing import Any
 import numpy.typing as npt
-import sklearn
-from sklearn.neural_network import MLPClassifier, MLPRegressor
 import torch
 import torch.nn as nn
 import tensorflow as tf
+from typing import Callable
 
 from .model import Model
 from .wrap_model import wrap_model
@@ -71,3 +70,16 @@ class NNModel(Model):
     def activation_at_layer(self, X:npt.NDArray, layer_identifier: int | str | list[int | str]) -> list[npt.NDArray]:
         return self.wrapped_model.activation_at_layer(X, layer_identifier)
     
+    def compute_gradients(
+        self,
+        X: npt.NDArray | torch.Tensor,
+        objective_layer: int | str,
+        objective_fn: Callable[[torch.Tensor], torch.tensor],
+        wrt_layer: int | str = None
+    ) -> npt.NDArray:
+        return self.wrapped_model.compute_gradients(
+            X=X,
+            objective_layer=objective_layer,
+            objective_fn=objective_fn,
+            wrt_layer=wrt_layer
+        )
