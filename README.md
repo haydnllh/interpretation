@@ -4,40 +4,41 @@ Based on: https://christophm.github.io/interpretable-ml-book/
 
 ## Example
 ```python
-from sklearn.datasets import make_regression
-from sklearn.linear_model import LinearRegression
-from interpretation.explainer.agnostic.counterfactual import CounterfactualExplainer
+import numpy as np
+import matplotlib.pyplot as plt
+from torchvision import models
 
-X, y = make_regression(
-    n_samples=200,
-    n_features=4,
-    noise=0.1,
-    random_state=42
-)
+from interpretation.explainer.nn.nn_vis import NNVis
 
-model = LinearRegression()
-model.fit(X, y)
+model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+model.eval()
+vis = NNVis(model)
 
-explainer = CounterfactualExplainer(
-    input_model=model,
-    input_data=X
-)
+fig, ax = plt.subplots(1, 4, figsize=(16, 4))
 
-desired_y = 1.0
-result = explainer.explain(
-    X[0],
-    desired_y=desired_y,
-    method="wachter"
-)
+for i in range(1, 5):
+    layer = f"layer{i}.0.conv2"
+    
+    img = vis.visualise(
+        layer_identifier=layer,
+        input_shape=(1, 3, 128, 128),
+        channel_idx=0,
+        max_iter=50
+    )
+    
+    img_min, img_max = img.min(), img.max()
+    img = (img - img_min) / (img_max - img_min + 1e-8)
+    img_disp = np.transpose(img.squeeze(), (1, 2, 0))
 
-print(
-f"""
-    The counterfactual result that produces the value {desired_y} is: 
-    Original: {X[0]}, Prediction: {model.predict(X[:1])}
-    Counterfactual: {result}, Prediction: {model.predict(result[None, :])}
-"""
-)
+    ax_idx = i - 1
+    ax[ax_idx].imshow(img_disp)
+    ax[ax_idx].set_title(f"{layer}", fontsize=11, pad=8)
+    ax[ax_idx].axis('off')
+
+plt.tight_layout()
+plt.show()
 ```
+![Neural Network Visualisation Example](.github/images/nnvis.png)
 
 ## Setting up the repository
 
