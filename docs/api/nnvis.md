@@ -1,3 +1,3 @@
 # Neural Network Visualiser
 
-::: interpretation.explainer.nn.nnvis.NNVis
+::: interpretation.explainer.nn.nn_vis.NNVis
