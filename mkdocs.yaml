@@ -19,6 +19,7 @@ nav:
       - Counterfactual Explainer: api/counterfactual.md
       - PyTorch Model Wrapper: api/pytorch_model.md
       - Tensorflow Model Wrapper: api/tf_model.md
+      - Neural Network Visualiser: api/nnvis.md
 
 markdown_extensions:
   - pymdownx.arithmatex:
