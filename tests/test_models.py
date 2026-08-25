@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from interpretation.models import wrap_model
 
-def test_pytorch_wrapper():
+def test_torch_wrapper():
     pytorch_model = torch.nn.Linear(1, 1)
     model = wrap_model(pytorch_model)
     
