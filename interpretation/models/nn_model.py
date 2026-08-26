@@ -3,7 +3,7 @@ import numpy.typing as npt
 import torch
 import torch.nn as nn
 import tensorflow as tf
-from typing import Callable
+from typing import Callable, Tuple
 
 from .model import Model
 from .wrap_model import wrap_model
@@ -73,13 +73,13 @@ class NNModel(Model):
     def compute_gradients(
         self,
         X: npt.NDArray | torch.Tensor,
-        objective_layer: int | str,
+        objective: int | str | Tuple[int, int],
         objective_fn: Callable[[torch.Tensor], torch.tensor],
-        wrt_layer: int | str = None
+        wrt: int | str | Tuple[int, int] = None
     ) -> npt.NDArray:
         return self.wrapped_model.compute_gradients(
             X=X,
-            objective_layer=objective_layer,
+            objective=objective,
             objective_fn=objective_fn,
-            wrt_layer=wrt_layer
+            wrt=wrt
         )

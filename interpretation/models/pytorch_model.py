@@ -1,7 +1,7 @@
 import torch
 import numpy.typing as npt
 from typing import Any
-from typing import Callable, Tuple, Any, Dict
+from typing import Callable, Tuple, Any
 from .model import Model
 
 class PyTorchModel(Model):
@@ -93,17 +93,19 @@ class PyTorchModel(Model):
     def compute_gradients(
         self,
         X: npt.NDArray | torch.Tensor,
-        objective_layer: int | str,
+        objective: int | str | Tuple[int, int],
         objective_fn: Callable[[torch.Tensor], torch.tensor],
-        wrt_layer: int | str = None
+        wrt: int | str | Tuple[int, int] = None
     ) -> npt.NDArray:
         r"""Computes the gradient \(\frac{\partial \text{Objective}}{\partial X}\).
 
-        `objective_layer` is Objective, `wrt_layer` is X.
+        `objective` is Objective, `wrt` is X.
 
         The gradient is calculated after applying the objective function to the objective layer w.r.t the wrt layer.
+        
+        Tuple forms of `objective` or `wrt` specifies specific neurons.
 
-        Note: When no `wrt_layer` is provided, it will default to `'input'`.
+        Note: When no `wrt` is provided, it will default to `'input'`.
         """
         dtype = next(self.model.parameters()).dtype
         
@@ -115,15 +117,22 @@ class PyTorchModel(Model):
         activations = {}
         hooks = []
         
-        def hook_generator(name):
+        def hook_generator(name, neuron_idx=None):
             def hook(module, input, output):
-                activations[name] = output
+                if neuron_idx is not None:
+                    activations[name] = output.squeeze()[neuron_idx]
+                else:
+                    activations[name] = output
             return hook
             
-        obj_name = self._layer_int_to_name(objective_layer)
-        wrt_name = self._layer_int_to_name(wrt_layer) if wrt_layer is not None else "input"
+        obj_name = self._layer_int_to_name(objective)
+        wrt_name = self._layer_int_to_name(wrt) if wrt is not None else "input"
         
-        hooks.append(self.layer_dict[obj_name].register_forward_hook(hook_generator("obj")))
+        if isinstance(objective, (int, str)):
+            hooks.append(self.layer_dict[obj_name].register_forward_hook(hook_generator("obj")))
+        else:
+            hooks.append(self.layer_dict[obj_name].register_forward_hook(hook_generator("obj", objective[1])))
+            
         if wrt_name != "input":
             hooks.append(self.layer_dict[wrt_name].register_forward_hook(hook_generator("wrt")))
             
@@ -152,13 +161,18 @@ class PyTorchModel(Model):
             
             grad = target_wrt.grad.detach().cpu().numpy()
 
+            if isinstance(wrt, Tuple):
+                return grad.squeeze()[wrt[1]]
+            
             return grad
         
         finally:
             for h in hooks:
                 h.remove()
         
-    def _layer_int_to_name(self, layer_id: int | str) -> str:
+    def _layer_int_to_name(self, layer_id: int | str | Tuple[int, int]) -> str:
         if isinstance(layer_id, int):
             return list(self.layer_dict.keys())[layer_id]
+        elif isinstance(layer_id, Tuple):
+            return list(self.layer_dict.keys())[layer_id[0]]
         return layer_id
