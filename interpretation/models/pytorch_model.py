@@ -103,7 +103,7 @@ class PyTorchModel(Model):
 
         The gradient is calculated after applying the objective function to the objective layer w.r.t the wrt layer.
         
-        Tuple forms of `objective` or `wrt` specifies specific neurons.
+        Tuple forms of `objective` or `wrt` specifies specific neurons, e.g. (0, 1) means the second neuron of the first layer.
 
         Note: When no `wrt` is provided, it will default to `'input'`.
         """
