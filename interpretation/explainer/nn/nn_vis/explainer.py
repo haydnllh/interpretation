@@ -68,18 +68,18 @@ class NNVis(NNExplainer):
             Input shape is not 1-d, 2-d or 3-d.
         """
         if self.istorch:
-            self.objective_fn = lambda x : x[:, channel_idx, :, :].mean()
+            objective_fn = lambda x : x[:, channel_idx, :, :].mean()
         else:
-            self.objective_fn = lambda x : tf.reduce_mean(x[:, :, :, channel_idx])
+            objective_fn = lambda x : tf.reduce_mean(x[:, :, :, channel_idx])
             
         if self.istorch and input_shape.ndim == 3:
-            self.objective_fn = lambda x : x[channel_idx, :, :].mean()
+            objective_fn = lambda x : x[channel_idx, :, :].mean()
         elif not self.istorch and input_shape.ndim == 3:
-            self.objective_fn = lambda x : tf.reduce_mean(x[:, :, channel_idx])
+            objective_fn = lambda x : tf.reduce_mean(x[:, :, channel_idx])
         elif self.istorch and (input_shape.ndim == 2 or input_shape == 1):
-            self.objective_fn = lambda x : x.mean()
+            objective_fn = lambda x : x.mean()
         elif not self.istorch and (input_shape.ndim == 2 or input_shape == 1):
-            self.objective_fn = lambda x : tf.reduce_mean(x)
+            objective_fn = lambda x : tf.reduce_mean(x)
         else:
             raise ValueError("Input shape can only be 1-d, 2-d or 3-d.")
 
@@ -111,8 +111,8 @@ class NNVis(NNExplainer):
         
             grad = self.model.compute_gradients(
                 X_jitter,
-                objective_layer=layer_identifier,
-                objective_fn=self.objective_fn
+                objective=layer_identifier,
+                objective_fn=objective_fn
             )
             
             if input_shape.ndim == 1:
