@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from ..nn_explainer import NNExplainer
 from ....utils.validate_input import validate_input_1d
+from .smooth_grad import smooth_grad
 
 class SaliencyMap(NNExplainer):
     r""" 
@@ -29,8 +30,9 @@ class SaliencyMap(NNExplainer):
         self,
         X: npt.NDArray,
         class_idx: int,
-        method: str = "vanilla"
-    ):
+        method: str = "SmoothGrad",
+        n_samples: int = 50
+    ) -> npt.NDArray:
         """Computes the saliency map of the input
 
         Parameters
@@ -60,3 +62,15 @@ class SaliencyMap(NNExplainer):
             )
             
             return grad
+        elif method == "SmoothGrad":
+            grad = smooth_grad(
+                self.model,
+                X,
+                class_idx=class_idx,
+                objective_fn=objective_fn,
+                n_samples=n_samples
+            )
+            
+            return grad
+        else:
+            raise ValueError(f"Method {method} is not supported, only valid methods are 'vanilla' and 'SmoothGrad'.")
