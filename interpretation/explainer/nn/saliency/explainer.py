@@ -7,7 +7,7 @@ from matplotlib.axis import Axis
 from matplotlib.figure import Figure
 
 from ..nn_explainer import NNExplainer
-from ....utils.validate_input import validate_input_1d
+from ....utils.validate_input import validate_input_numpy
 from .smooth_grad import smooth_grad
 
 class SaliencyMap(NNExplainer):
@@ -16,7 +16,7 @@ class SaliencyMap(NNExplainer):
     
     \( \frac{\partial S_c}{\partial x} \)
     
-    where \( S_c = \text{class score}\) and \(x = \text(input)\)
+    where \( S_c = \text{class score}\) and \(x = \text{input}\)
     
     It shows the sensitivity of each pixel / feature, higher values can mean higher importance.
     """
@@ -54,6 +54,8 @@ class SaliencyMap(NNExplainer):
         npt.NDArray
             Resulting saliency map, the partial derivative of class score w.r.t. input, shape is the same as the input
         """
+        X = validate_input_numpy(X)
+        
         if self.istorch:
             objective_fn = lambda x : x.mean()
         else:

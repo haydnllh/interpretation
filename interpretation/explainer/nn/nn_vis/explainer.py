@@ -1,9 +1,11 @@
-from ..nn_explainer import NNExplainer
 import numpy as np
 import numpy.typing as npt
 import tensorflow as tf
 import torch
 from scipy.ndimage import gaussian_filter
+
+from ..nn_explainer import NNExplainer
+from ....utils.validate_input import validate_input_numpy
 
 class NNVis(NNExplainer):
     """Visualise learned features of neural networks via gradient ascent. This is ideal for visualisation of models that use visual features, e.g. image classification""" 
@@ -67,6 +69,8 @@ class NNVis(NNExplainer):
         ValueError
             Input shape is not 1-d, 2-d or 3-d.
         """
+        X = validate_input_numpy(X)
+        
         if self.istorch:
             objective_fn = lambda x : x[:, channel_idx, :, :].mean()
         else:
