@@ -13,21 +13,15 @@ fig, ax = plt.subplots(1, 4, figsize=(16, 4))
 for i in range(1, 5):
     layer = f"layer{i}.0.conv2"
     
-    img = vis.visualise(
+    img = vis.plot_visualization(
         layer_identifier=layer,
-        input_shape=(1, 3, 128, 128),
+        input_shape=(3, 128, 128),
         channel_idx=0,
-        max_iter=50
+        max_iter=50,
+        ax=ax[i-1]
     )
     
-    img_min, img_max = img.min(), img.max()
-    img = (img - img_min) / (img_max - img_min + 1e-8)
-    img_disp = np.transpose(img.squeeze(), (1, 2, 0))
-
-    ax_idx = i - 1
-    ax[ax_idx].imshow(img_disp)
-    ax[ax_idx].set_title(f"{layer}", fontsize=11, pad=8)
-    ax[ax_idx].axis('off')
+    ax[i-1].set_title(f"{layer}", fontsize=11, pad=8)
 
 plt.tight_layout()
 plt.show()

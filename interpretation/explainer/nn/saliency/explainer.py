@@ -11,6 +11,7 @@ from ....utils.validate_input import validate_input_numpy
 from .smooth_grad import smooth_grad
 
 class SaliencyMap(NNExplainer):
+    # make plot work for non 3d image
     r""" 
     Saliency is a map of the derivatives of the class score with respect to the input pixels / features:
     

@@ -3,12 +3,14 @@ import numpy.typing as npt
 import tensorflow as tf
 import torch
 from scipy.ndimage import gaussian_filter
+import matplotlib.pyplot as plt
+from matplotlib.axis import Axis
 
 from ..nn_explainer import NNExplainer
 from ....utils.validate_input import validate_input_numpy
 
 class NNVis(NNExplainer):
-    """Visualise learned features of neural networks via gradient ascent. This is ideal for visualisation of models that use visual features, e.g. image classification""" 
+    """Visualize learned features of neural networks via gradient ascent. This is ideal for visualization of models that use visual features, e.g. image classification""" 
     ## only for torch and tf
     def __init__(self, input_model):
         super().__init__(input_model)
@@ -20,7 +22,7 @@ class NNVis(NNExplainer):
             raise TypeError(f"`NNVis` only support Torch or TensorFlow models.")
     
         
-    def visualise(
+    def visualize(
         self,
         layer_identifier: int | str,
         input_shape: tuple[int, ...],
@@ -39,17 +41,17 @@ class NNVis(NNExplainer):
         Parameters
         ----------
         layer_identifier : int | str
-            The layer we maximise the input with respect to.
+            The layer we maximize the input with respect to.
         input_shape : tuple[int, ...]
-            The shape of the input we are optimising.
+            The shape of the input we are optimizing.
         channel_idx : int
-            The channel of the image we are maximising on, by default 0.
+            The channel of the image we are maximizing on, by default 0.
         lr : float, optional
             Learning rate of the gradient ascent, by default 1e-3
         max_iter : int, optional
             Maximum number of iterations of the gradient ascent by default 200
         weight_decay : float, optional
-            L2 regularisation strength of the gradient ascent, by default 1e-3
+            L2 regularization strength of the gradient ascent, by default 1e-3
         max_jitter : int, optional
             Maximum number of pixels jitter, by default 2
         blur_sigma : float, optional
@@ -62,27 +64,27 @@ class NNVis(NNExplainer):
         Returns
         -------
         npt.NDArray
-            The input generated that maximises the activation at the specified layer.
+            The input generated that maximizes the activation at the specified layer.
 
         Raises
         ------
         ValueError
             Input shape is not 1-d, 2-d or 3-d.
         """
-        X = validate_input_numpy(X)
-        
         if self.istorch:
             objective_fn = lambda x : x[:, channel_idx, :, :].mean()
         else:
             objective_fn = lambda x : tf.reduce_mean(x[:, :, :, channel_idx])
             
+        input_shape = np.asarray(input_shape)
+            
         if self.istorch and input_shape.ndim == 3:
             objective_fn = lambda x : x[channel_idx, :, :].mean()
         elif not self.istorch and input_shape.ndim == 3:
             objective_fn = lambda x : tf.reduce_mean(x[:, :, channel_idx])
-        elif self.istorch and (input_shape.ndim == 2 or input_shape == 1):
+        elif self.istorch and (input_shape.ndim == 2 or input_shape.ndim == 1):
             objective_fn = lambda x : x.mean()
-        elif not self.istorch and (input_shape.ndim == 2 or input_shape == 1):
+        elif not self.istorch and (input_shape.ndim == 2 or input_shape.ndim == 1):
             objective_fn = lambda x : tf.reduce_mean(x)
         else:
             raise ValueError("Input shape can only be 1-d, 2-d or 3-d.")
@@ -138,3 +140,38 @@ class NNVis(NNExplainer):
                 X = np.clip(X, clipping[0], clipping[1])
             
         return X
+    
+    def plot_visualization(
+        self,
+        layer_identifier: int | str,
+        input_shape: tuple[int, ...],
+        channel_idx: int = 0,
+        lr: float = 1e-3,
+        max_iter: int = 200,
+        weight_decay: float = 1e-3,
+        max_jitter: int = 2,
+        blur_sigma: float = 0.5,
+        blur_every: int = 4,
+        clipping: tuple[float, float] | None = None,
+        ax = None
+    ) -> npt.NDArray:
+        """Plots the feature visualization on a matplotlib axis."""
+        kwargs = locals()
+        kwargs.pop("self")
+        ax = kwargs.pop("ax")
+        
+        img = self.visualize(**kwargs)
+        
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8,8))
+        else:
+            fig = ax.figure
+            
+        img_min, img_max = img.min(), img.max()
+        img = (img - img_min) / (img_max - img_min + 1e-8)
+        img_disp = np.transpose(img.squeeze(), (1, 2, 0))
+        
+        ax.imshow(img_disp)
+        ax.axis("off")
+        
+        return fig, ax
