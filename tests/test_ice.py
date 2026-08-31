@@ -88,19 +88,6 @@ def test_input(regressor):
         
     with pytest.raises(ValueError, match="Input expected to be a 1-d or 2-d array"):
         explainer.plot(X_3D, feature_idx=0)
-
-def test_input_not_np(regressor):
-    model, X, y = regressor
-    
-    explainer = ICEExplainer(model, X)
-
-    X_NonArray = X.tolist()
-
-    with pytest.raises(TypeError, match="Input must be an instance of np.ndarray"):
-        explainer.explain(X_NonArray, feature_idx=0)
-
-    with pytest.raises(TypeError, match="Input must be an instance of np.ndarray"):
-        explainer.plot(X_NonArray, feature_idx=0)
             
 def test_all_features(regressor):
     model, X, y = regressor

@@ -34,37 +34,36 @@ class TfModel(Model):
         Forward passes input X up to the specified layer.
         layer_identifier can be an integer index or layer name string.
         """ 
-        target_layers = []
+        layer_identifier = self._get_layer_idx(layer_identifier)
+        X_tensor = tf.convert_to_tensor(X, dtype=self.dtype)
         
         if not isinstance(layer_identifier, list):
             layer_identifier = [layer_identifier]
             
         if isinstance(self.model, keras.Sequential):
-            pass
-        else:
-            for identifier in layer_identifier:
-                try:
-                    if isinstance(identifier, int):
-                        target_layers.append(self.model.layers[identifier].output)
-                    else:
-                        target_layers.append(self.model.get_layer(name=identifier).output)
-                except (IndexError, ValueError):
-                    raise ValueError(f"Layer '{identifier}' not found in TensorFlow model.")
-                
-            if not target_layers:
-                raise ValueError(f"Layers '{layer_identifier}' not found in Tensorflow model.")
+            activation_map = {}
+            activations = []
+            curr = X_tensor
             
+            for i, layer in enumerate(self.model.layers):
+                curr = layer(curr)
+                activation_map[i] = curr
+                
+            for layer_idx in layer_identifier:
+                activations.append(activation_map[layer_idx].numpy())
+                
+        else:
             intermediate_model = tf.keras.Model(
                 inputs=self.model.input,
-                outputs=target_layers
+                outputs=layer_identifier
             )
             
-            X_tensor = tf.convert_to_tensor(X, dtype=self.dtype)
             activations = intermediate_model(X_tensor, training=False)
             
             if isinstance(activations, list):
-                return [a.numpy() for a in activations]
-        return activations.numpy()
+                activations =  [a.numpy() for a in activations]
+            
+        return activations
     
     def compute_gradients(
         self,
@@ -165,7 +164,7 @@ class TfModel(Model):
 
         return grad.numpy()
             
-    def _get_layer_idx(self, identifier: int | str) -> int:
+    def _get_layer_idx(self, identifier: int | str | list[int | str] | Tuple[int, int]) -> int:
         if isinstance(identifier, int):
             if identifier < 0 or identifier >= len(self.model.layers):
                 raise ValueError(f"Layer index '{identifier}' out of bounds.")
@@ -173,6 +172,23 @@ class TfModel(Model):
         
         if isinstance(identifier, Tuple):
             return identifier[0]
+        
+        if isinstance(identifier, list):
+            layer_map = {}
+            layer_indices = []
+            
+            for idx, layer in enumerate(self.model.layers):
+                layer_map[layer] = idx
+            
+            for layer in identifier:
+                if isinstance(layer, int):
+                    layer_indices.append(layer)
+                elif isinstance(layer, str):
+                    layer_indices.append(layer_map[layer])
+                else:
+                    raise TypeError("Layer identifiers can only be int or str.")
+            
+            return layer_indices
 
         for idx, layer in enumerate(self.model.layers):
             if layer.name == identifier:
